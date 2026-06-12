@@ -1,0 +1,287 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["partialIndexes"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model detail_kanban_part_number {
+  pnu_code        String      @db.VarChar(50)
+  kbn_no          String      @db.VarChar(5)
+  pnu_part_number String?     @db.VarChar(55)
+  pnu_part_desc   String?     @db.VarChar(55)
+  pnu_latest_date DateTime    @db.Date
+  pnu_status      Int?
+  pnu_creadate    DateTime?   @default(now()) @db.Timestamp(3)
+  pnu_modidate    DateTime?   @db.Timestamp(3)
+  pnu_creaby      String?     @db.VarChar(55)
+  pnu_modiby      String?     @db.VarChar(55)
+  mst_kanbans     mst_kanbans @relation(fields: [kbn_no], references: [kbn_no], onDelete: Cascade, map: "fk_detail_kanban_part_kbn")
+
+  @@id([pnu_code, kbn_no, pnu_latest_date], map: "pk_detail_kanban_part")
+}
+
+model detail_line {
+  usr_id       Int
+  lin_id       Int
+  dle_status   Int?
+  dle_creadate DateTime? @default(now()) @db.Timestamp(3)
+  dle_modidate DateTime? @db.Timestamp(3)
+  dle_creaby   String?   @db.VarChar(55)
+  dle_modiby   String?   @db.VarChar(55)
+  mst_lines    mst_lines @relation(fields: [lin_id], references: [lin_id], onDelete: Cascade, map: "fk_detail_line_line")
+  mst_users    mst_users @relation(fields: [usr_id], references: [usr_id], onDelete: Cascade, map: "fk_detail_line_user")
+
+  @@id([usr_id, lin_id], map: "pk_detail_line")
+}
+
+model detail_menu {
+  mnu_id       Int
+  rol_id       Int
+  dtm_status   Int?
+  dtm_creadate DateTime? @default(now()) @db.Timestamp(3)
+  dtm_modidate DateTime? @db.Timestamp(3)
+  dtm_creaby   String?   @db.VarChar(55)
+  dtm_modiby   String?   @db.VarChar(55)
+  mst_menus    mst_menus @relation(fields: [mnu_id], references: [mnu_id], onDelete: Cascade, map: "fk_detail_menu_menu")
+  mst_roles    mst_roles @relation(fields: [rol_id], references: [rol_id], onDelete: Cascade, map: "fk_detail_menu_role")
+
+  @@id([mnu_id, rol_id], map: "pk_detail_menu")
+}
+
+model mst_colors {
+  clr_id       Int           @id(map: "PK__mst_colo__9F0B401733F5CE4A") @default(autoincrement())
+  clr_name     String?       @db.VarChar(55)
+  clr_status   Int?
+  clr_creadate DateTime?     @default(now()) @db.Timestamp(3)
+  clr_modidate DateTime?     @db.Timestamp(3)
+  clr_creaby   String?       @db.VarChar(55)
+  clr_modiby   String?       @db.VarChar(55)
+  mst_kanbans  mst_kanbans[]
+}
+
+model mst_customers {
+  cst_id                    Int                         @id(map: "PK__mst_cust__97B94804BAFA5C89") @default(autoincrement())
+  spl_id                    Int?
+  qfm_id                    Int?
+  cst_code                  String?                     @unique(map: "UQ_mst_customers_cst_code") @db.VarChar(4)
+  cst_name                  String?                     @db.VarChar(55)
+  cst_status                Int?
+  cst_creadate              DateTime?                   @default(now()) @db.Timestamp(3)
+  cst_modidate              DateTime?                   @db.Timestamp(3)
+  cst_creaby                String?                     @db.VarChar(55)
+  cst_modiby                String?                     @db.VarChar(55)
+  mst_qr_formats            mst_qr_formats?             @relation(fields: [qfm_id], references: [qfm_id], onDelete: NoAction, onUpdate: NoAction, map: "FK__mst_custo__qfm_i__73BA3083")
+  mst_suppliers             mst_suppliers?              @relation(fields: [spl_id], references: [spl_id], onDelete: NoAction, onUpdate: NoAction, map: "FK__mst_custo__spl_i__72C60C4A")
+  mst_kanbans               mst_kanbans[]
+  txn_barcode_delivery_scan txn_barcode_delivery_scan[]
+}
+
+model mst_kanbans {
+  kbn_no                        String                      @id(map: "PK__mst_kanb__E1B7E3C25B2EB08E") @db.VarChar(5)
+  cst_id                        Int?
+  clr_id                        Int?
+  kbn_uniq_no                   String?                     @unique(map: "uq_kbn_uniq_no", where: raw("kbn_uniq_no IS NOT NULL")) @db.VarChar(15)
+  kbn_qty_box                   Int?
+  kbn_isSpecial                 Int?
+  kbn_sequence_check_desc       String?                     @db.Text
+  kbn_logistic_guide_desc       String?                     @db.Text
+  kbn_instruction_work_path     String?                     @db.Text
+  kbn_sequence_check_path       String?                     @db.Text
+  kbn_logistic_guide_path       String?                     @db.Text
+  kbn_sequence_check_voice_path String?                     @db.Text
+  kbn_logistic_guide_voice_path String?                     @db.Text
+  kbn_stamp                     String?                     @db.VarChar(5)
+  kbn_remark                    String?                     @db.VarChar(55)
+  kbn_status                    Int?
+  kbn_creadate                  DateTime?                   @default(now()) @db.Timestamp(3)
+  kbn_modidate                  DateTime?                   @db.Timestamp(3)
+  kbn_creaby                    String?                     @db.VarChar(55)
+  kbn_modiby                    String?                     @db.VarChar(55)
+  kbn_device_no                 String?                     @db.VarChar(3)
+  kbn_cert_mark                 String?                     @db.VarChar(3)
+  kbn_oqc_barcode               String?                     @db.VarChar(13)
+  detail_kanban_part_number     detail_kanban_part_number[]
+  mst_colors                    mst_colors?                 @relation(fields: [clr_id], references: [clr_id], onDelete: NoAction, onUpdate: NoAction, map: "FK__mst_kanba__clr_i__440B1D61")
+  mst_customers                 mst_customers?              @relation(fields: [cst_id], references: [cst_id], onDelete: NoAction, onUpdate: NoAction, map: "FK__mst_kanba__cst_i__4316F928")
+  txn_barcode_delivery_scan     txn_barcode_delivery_scan[]
+  txn_double_check              txn_double_check[]
+  txn_ongoing_quality_check     txn_ongoing_quality_check[]
+}
+
+model mst_lines {
+  lin_id           Int                @id(map: "PK__mst_line__33CA37988476A6EB") @default(autoincrement())
+  lin_code         String?            @db.VarChar(10)
+  lin_status       Int?
+  lin_creadate     DateTime?          @default(now()) @db.Timestamp(3)
+  lin_modidate     DateTime?          @db.Timestamp(3)
+  lin_creaby       String?            @db.VarChar(55)
+  lin_modiby       String?            @db.VarChar(55)
+  detail_line      detail_line[]
+  txn_double_check txn_double_check[]
+}
+
+model mst_matrix {
+  mtx_id           Int     @id(map: "PK__mst_matr__7F693D66DF87224A") @default(autoincrement())
+  mtx_actual_date  String? @db.Char(2)
+  mtx_date         String? @db.Char(2)
+  mtx_actual_month String? @db.Char(2)
+  mtx_month        String? @db.Char(2)
+  mtx_actual_year  String? @db.Char(4)
+  mtx_year         String? @db.Char(2)
+}
+
+model mst_menus {
+  mnu_id          Int               @id(map: "PK__mst_menu__D57699FF0F3A7F05") @default(autoincrement())
+  mnu_icon        String?           @db.VarChar(20)
+  mnu_name        String?           @db.VarChar(55)
+  mnu_path        String?           @db.VarChar(50)
+  mnu_status      Int?
+  mnu_creadate    DateTime?         @default(now()) @db.Timestamp(3)
+  mnu_modidate    DateTime?         @db.Timestamp(3)
+  mnu_creaby      String?           @db.VarChar(55)
+  mnu_modiby      String?           @db.VarChar(55)
+  grm_id          Int?
+  detail_menu     detail_menu[]
+  mst_group_menu  mst_group_menu?   @relation(fields: [grm_id], references: [grm_id], onDelete: NoAction, onUpdate: NoAction, map: "FK__mst_menus__grm_i__04E4BC85")
+  txn_action_logs txn_action_logs[]
+}
+
+model mst_roles {
+  rol_id       Int           @id(map: "PK__mst_role__CF32E44333A0D9DC") @default(autoincrement())
+  rol_name     String?       @db.VarChar(20)
+  rol_status   Int?
+  rol_creadate DateTime?     @default(now()) @db.Timestamp(3)
+  rol_modidate DateTime?     @db.Timestamp(3)
+  rol_creaby   String?       @db.VarChar(55)
+  rol_modiby   String?       @db.VarChar(55)
+  detail_menu  detail_menu[]
+  mst_users    mst_users[]
+}
+
+model mst_users {
+  usr_id       Int           @id(map: "PK__mst_user__60621ABC875BCC38") @default(autoincrement())
+  rol_id       Int?
+  usr_fullname String?       @db.VarChar(55)
+  usr_username String?       @unique(map: "uq_usr_username") @db.VarChar(30)
+  usr_password String?       @db.Text
+  usr_status   Int?
+  usr_creadate DateTime?     @default(now()) @db.Timestamp(3)
+  usr_modidate DateTime?     @db.Timestamp(3)
+  usr_creaby   String?       @db.VarChar(55)
+  usr_modiby   String?       @db.VarChar(55)
+  usr_isLocked Int?
+  usr_isForced Int?
+  detail_line  detail_line[]
+  mst_roles    mst_roles?    @relation(fields: [rol_id], references: [rol_id], onDelete: NoAction, onUpdate: NoAction, map: "FK__mst_users__rol_i__2E1BDC42")
+}
+
+model txn_action_logs {
+  acl_id       Int        @id(map: "PK__txn_acti__F92D579F67DB8A42") @default(autoincrement())
+  mnu_id       Int?
+  acl_action   String?    @db.VarChar(10)
+  acl_old      String?    @db.Text
+  acl_new      String?    @db.Text
+  acl_creadate DateTime?  @default(now()) @db.Timestamp(3)
+  acl_creaby   String?    @db.VarChar(55)
+  mst_menus    mst_menus? @relation(fields: [mnu_id], references: [mnu_id], onDelete: NoAction, onUpdate: NoAction, map: "FK__txn_actio__mnu_i__5CD6CB2B")
+}
+
+model txn_ongoing_quality_check {
+  oqc_id          Int          @id(map: "PK__txn_ongo__E33770DA4F72F33F") @default(autoincrement())
+  kbn_no          String?      @db.VarChar(5)
+  oqc_lot_no      String?      @db.VarChar(3)
+  oqc_qty_box     Int?
+  oqc_qty_plan    Int?
+  oqc_total_label Int?
+  oqc_total_A4    Int?
+  oqc_status      Int?
+  oqc_creadate    DateTime?    @default(now()) @db.Timestamp(3)
+  oqc_creaby      String?      @db.VarChar(55)
+  mst_kanbans     mst_kanbans? @relation(fields: [kbn_no], references: [kbn_no], onDelete: NoAction, onUpdate: NoAction, map: "FK__txn_ongoi__kbn_n__59063A47")
+}
+
+model mst_qr_formats {
+  qfm_id         Int             @id(map: "PK__mst_qr_f__99B978E546E62CFB") @default(autoincrement())
+  qfm_name       String?         @db.VarChar(55)
+  qfm_pattern    String?         @db.Text
+  qfm_seq_length Int?            @default(4)
+  qfm_status     Int?
+  qfm_creadate   DateTime?       @default(now()) @db.Timestamp(3)
+  qfm_modidate   DateTime?       @db.Timestamp(3)
+  qfm_creaby     String?         @db.VarChar(55)
+  qfm_modiby     String?         @db.VarChar(55)
+  mst_customers  mst_customers[]
+}
+
+model mst_suppliers {
+  spl_id        Int             @id(map: "PK__mst_supp__7CE09DFDC85066A1") @default(autoincrement())
+  spl_code      String?         @unique(map: "uq_spl_code", where: raw("spl_code IS NOT NULL")) @db.VarChar(3)
+  spl_status    Int?
+  spl_creadate  DateTime?       @default(now()) @db.Timestamp(3)
+  spl_modidate  DateTime?       @db.Timestamp(3)
+  spl_creaby    String?         @db.VarChar(55)
+  spl_modiby    String?         @db.VarChar(55)
+  mst_customers mst_customers[]
+}
+
+model mst_group_menu {
+  grm_id       Int         @id(map: "PK__mst_grou__3422FD3FCAA00D6F") @default(autoincrement())
+  grm_name     String?     @db.VarChar(20)
+  grm_status   Int?
+  grm_creadate DateTime?   @default(now()) @db.Timestamp(3)
+  grm_modidate DateTime?   @db.Timestamp(3)
+  grm_creaby   String?     @db.VarChar(55)
+  grm_modiby   String?     @db.VarChar(55)
+  mst_menus    mst_menus[]
+}
+
+model txn_double_check {
+  doc_id        Int          @id(map: "PK__txn_doub__8AD02924D3FED541") @default(autoincrement())
+  kbn_no        String?      @db.VarChar(5)
+  lin_id        Int?
+  doc_qty_total Int?
+  doc_qty_ng    Int?
+  doc_creadate  DateTime?    @default(now()) @db.Timestamp(3)
+  doc_creaby    String?      @db.VarChar(55)
+  doc_qr_scan   String?      @db.Text
+  doc_sequence  Int?
+  mst_kanbans   mst_kanbans? @relation(fields: [kbn_no], references: [kbn_no], onDelete: NoAction, onUpdate: NoAction, map: "FK_txn_double_check_kbn")
+  mst_lines     mst_lines?   @relation(fields: [lin_id], references: [lin_id], onDelete: NoAction, onUpdate: NoAction, map: "FK_txn_double_check_line")
+}
+
+model txn_barcode_delivery_scan {
+  bds_ship_date                    DateTime                           @db.Date
+  bds_ship_no                      String                             @db.VarChar(10)
+  bds_so_no                        String                             @db.VarChar(10)
+  bds_po_no                        String                             @db.VarChar(6)
+  kbn_no                           String                             @db.VarChar(5)
+  cst_code                         String?                            @db.VarChar(4)
+  bds_qty_perbox                   Int?
+  bds_box_qty                      Int?
+  bds_status                       Int?                               @default(0)
+  bds_creadate                     DateTime?                          @default(now()) @db.Timestamp(3)
+  bds_creaby                       String?                            @db.VarChar(55)
+  mst_customers                    mst_customers?                     @relation(fields: [cst_code], references: [cst_code], onDelete: NoAction, onUpdate: NoAction, map: "FK_txn_bds_mst_customers")
+  mst_kanbans                      mst_kanbans                        @relation(fields: [kbn_no], references: [kbn_no], onUpdate: NoAction, map: "FK_txn_bds_mst_kanbans")
+  txn_barcode_delivery_scan_detail txn_barcode_delivery_scan_detail[]
+
+  @@id([bds_ship_date, bds_ship_no, bds_so_no, bds_po_no, kbn_no], map: "PK_txn_barcode_delivery_scan")
+}
+
+model txn_barcode_delivery_scan_detail {
+  bdsd_id                   Int                        @id(map: "PK__txn_barc__018CE8984D364DB3") @default(autoincrement())
+  bds_ship_date             DateTime?                  @db.Date
+  bds_ship_no               String?                    @db.VarChar(10)
+  bds_so_no                 String?                    @db.VarChar(10)
+  bds_po_no                 String?                    @db.VarChar(6)
+  kbn_no                    String?                    @db.VarChar(5)
+  bds_barcode_pik           String?                    @db.VarChar(100)
+  bds_barcode_cst           String?                    @db.VarChar(100)
+  bds_barcode_oqc           String?                    @db.VarChar(100)
+  bds_veridate              DateTime?                  @default(now()) @db.Timestamp(3)
+  bds_veriby                String?                    @db.VarChar(55)
+  txn_barcode_delivery_scan txn_barcode_delivery_scan? @relation(fields: [bds_ship_date, bds_ship_no, bds_so_no, bds_po_no, kbn_no], references: [bds_ship_date, bds_ship_no, bds_so_no, bds_po_no, kbn_no], onDelete: NoAction, onUpdate: NoAction, map: "FK_txn_bdsd_header")
+}
