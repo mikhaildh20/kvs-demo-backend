@@ -1,4 +1,4 @@
-import XLSX from 'xlsx';
+import { excelSerialDateToDate, readFirstWorksheetAsObjects } from "../utils/excelReader.js";
 import {  
     bulkInsertKanban,
     bulkInsertDetail,
@@ -39,16 +39,6 @@ const normalizeColumn = (value) =>
     String(value || "")
         .trim()
         .toUpperCase();
-
-const getSheetHeaders = (sheet) => {
-    const rows = XLSX.utils.sheet_to_json(sheet, {
-        header: 1,
-        blankrows: false,
-        defval: "",
-    });
-
-    return (rows[0] || []).map(normalizeColumn).filter(Boolean);
-};
 
 const validateColumns = (headers, requiredColumns) => {
     const columns = new Set(headers);
@@ -99,9 +89,9 @@ const parseExcelDate = (value) => {
     }
 
     if(typeof value === "number"){
-        const parsed = XLSX.SSF.parse_date_code(value);
+        const parsed = excelSerialDateToDate(value);
         if(parsed){
-            return new Date(parsed.y, parsed.m - 1, parsed.d);
+            return parsed;
         }
     }
 
@@ -159,18 +149,8 @@ export const KanbanService = {
         }
 
         // 🔥 READ FILE
-        const wbA = XLSX.readFile(fileA.path);
-        const wbB = XLSX.readFile(fileB.path);
-
-        const sheetARaw = XLSX.utils.sheet_to_json(
-            wbA.Sheets[wbA.SheetNames[0]],
-            { defval: null }
-        );
-
-        const sheetBRaw = XLSX.utils.sheet_to_json(
-            wbB.Sheets[wbB.SheetNames[0]],
-            { defval: null }
-        );
+        const sheetARaw = await readFirstWorksheetAsObjects(fileA.path, { defval: null });
+        const sheetBRaw = await readFirstWorksheetAsObjects(fileB.path, { defval: null });
 
         const sheetA = normalizeRowKeys(sheetARaw);
         const sheetB = normalizeRowKeys(sheetBRaw);

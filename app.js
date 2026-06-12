@@ -1,5 +1,8 @@
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import uploadRoutes from "./routes/upload.routes.js";
 import voiceRoutes from "./routes/voice.routes.js";
 import matrixRoutes from "./routes/matrix.routes.js";
@@ -29,20 +32,58 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const allowedOrigins = (process.env.CORS_ORIGINS || "https://kvs-demo.karsa-dev.my.id")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+app.disable("x-powered-by");
+app.set("trust proxy", 1);
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+}));
 app.use(cors({
-    origin: true,
+    origin(origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+        const error = new Error("Not allowed by CORS");
+        error.status = 403;
+        return callback(error);
+    },
     credentials: true,
 }));
-app.use(express.json());
+app.use(express.json({ limit: "1mb" }));
 
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/uploads", express.static(path.join(__dirname, "uploads"), {
+    dotfiles: "deny",
+    index: false,
+    maxAge: "1h",
+    setHeaders(res) {
+        res.setHeader("X-Content-Type-Options", "nosniff");
+    },
+}));
+
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 30,
+    standardHeaders: "draft-8",
+    legacyHeaders: false,
+});
+
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 1200,
+    standardHeaders: "draft-8",
+    legacyHeaders: false,
+});
 
 app.get("/", (req, res) => {
     res.send("Connected to Warehouse API");
 });
 
-app.use("/api/auth", authRoutes);
-app.use("/api", authenticate, authorizeMenu);
+app.use("/api/auth", authLimiter, authRoutes);
+app.use("/api", apiLimiter, authenticate, authorizeMenu);
 app.use("/api/uploads", uploadRoutes);
 app.use("/api/voice", voiceRoutes);
 app.use("/api/menus", menuRoutes);
@@ -60,5 +101,19 @@ app.use("/api/barcode-delivery-scans", barcodeDeliveryScanRoutes);
 app.use("/api/qr-formats", qrFormatRoutes);
 app.use("/api/group-menus", groupMenuRoutes);
 app.use("/api/users", userRoutes);
+
+app.use((err, req, res, next) => {
+    if (res.headersSent) {
+        return next(err);
+    }
+
+    const statusCode = err.status || err.statusCode || 500;
+    const safeStatusCode = statusCode >= 400 && statusCode < 600 ? statusCode : 500;
+    const message = safeStatusCode >= 500 ? "Internal server error" : err.message;
+
+    return res.status(safeStatusCode).json({
+        message,
+    });
+});
 
 export default app;

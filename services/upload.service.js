@@ -17,7 +17,20 @@ export const saveFile = (file, folder = "default") => {
         throw new Error("Invalid folder");
     }
 
-    const ext = path.extname(file.originalname);
+    const ext = path.extname(file.originalname || "").toLowerCase();
+    const allowedExtensions = new Set([
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".webp",
+        ".pdf",
+        ".xlsx",
+        ".mp3",
+    ]);
+
+    if (!allowedExtensions.has(ext)) {
+        throw new Error("Unsupported file type");
+    }
 
     const fileName = `${Date.now()}-${Math.random()
         .toString(36)

@@ -4,3 +4,6 @@ node_modules/
 uploads/
 temp/
 *.log
+.cache/
+.npm/
+.config/

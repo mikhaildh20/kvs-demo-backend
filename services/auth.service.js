@@ -24,7 +24,10 @@ const ensureRole = async (roleName = "Administrator") => {
 export const AuthService = {
   async seedUser(payload) {
     const username = payload.username || "admin";
-    const password = payload.password || "Admin@12345";
+    const password = payload.password || process.env.AUTH_SEED_PASSWORD;
+    if (!password) {
+      throw new Error("Seed password is required");
+    }
     const fullname = payload.name || payload.fullname || "System Administrator";
     const role = await ensureRole(payload.role || "Administrator");
 

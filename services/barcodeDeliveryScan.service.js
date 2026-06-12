@@ -1,4 +1,4 @@
-import XLSX from "xlsx";
+import { excelSerialDateToDate, readFirstWorksheetAsObjects } from "../utils/excelReader.js";
 import { BarcodeDeliveryScanModel } from "../models/barcodeDeliveryScan.model.js";
 import { ActionLogModel } from "../models/actionLog.model.js";
 import { OQCService } from "./oqc.service.js";
@@ -28,8 +28,8 @@ const parseNumber = (value) => {
 const parseExcelDate = (value) => {
   if (!value) return null;
   if (typeof value === "number") {
-    const parsed = XLSX.SSF.parse_date_code(value);
-    if (parsed) return new Date(parsed.y, parsed.m - 1, parsed.d);
+    const parsed = excelSerialDateToDate(value);
+    if (parsed) return parsed;
   }
 
   const date = new Date(value);
@@ -248,9 +248,7 @@ export const BarcodeDeliveryScanService = {
     await BarcodeDeliveryScanModel.ensureTable();
     if (!file) throw new Error("Excel file is required");
 
-    const workbook = XLSX.readFile(file.path);
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+    const rows = await readFirstWorksheetAsObjects(file.path, { defval: "" });
     assertRequiredColumns(rows);
 
     let imported = 0;
