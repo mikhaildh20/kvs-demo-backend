@@ -1,22 +1,19 @@
 # Project Context — KVS / Kanban Verification System
 
-## Scope
+## Purpose
 
-This context is for the KVS demo project only. Keep backend and frontend decisions together under this project context so they do not mix with Karsa Home, Portfolio, or Hermes Dashboard work.
+KVS is the Kanban Verification System demo project. Keep backend and frontend decisions together under this context so they do not mix with Karsa Home, Portfolio, or Hermes Dashboard work.
 
-KVS stands for Kanban Verification System. It is the demo continuation of the original WMS/Kanban work and covers verification workflows around OQC, Double Check, Barcode Delivery Scan, and related master data.
+It covers OQC, Double Check, Barcode Delivery Scan, Kanban import, reports, and related master data verification workflows.
 
-## Repositories
+## Repos / Paths
 
-- Backend source migration target: `mikhaildh20/kvs-demo-backend`
-- Frontend source migration target: `mikhaildh20/kvs-demo-frontend`
+- Backend repo: `mikhaildh20/kvs-demo-backend`
+- Frontend repo: `mikhaildh20/kvs-demo-frontend`
+- Backend path: `/opt/projects/kvs-demo-backend`
+- Frontend path: `/opt/projects/kvs-demo-frontend`
 - Original backend source copied from: `mikhaildh20/wms_backend`
 - Original frontend source copied from: `mikhaildh20/wms-frontend`
-
-## Server Paths
-
-- Backend: `/opt/projects/kvs-demo-backend`
-- Frontend: `/opt/projects/kvs-demo-frontend`
 
 ## Runtime
 
@@ -26,19 +23,22 @@ KVS stands for Kanban Verification System. It is the demo continuation of the or
 - Frontend internal port: `3001`
 - Runtime user: `kvsdemo`
 - Reverse proxy: Nginx
-- Deployment style: systemd + Nginx, not PM2
+- Deployment pattern: systemd + Nginx, not PM2
 
-## Public URLs
+## URLs
 
 - Frontend: `https://kvs-demo.karsa-dev.my.id`
 - API: `https://kvs-demo-api.karsa-dev.my.id`
+- Karsa Home card image:
+  - `/opt/projects/karsa-home/public/assets/kvs-preview.svg`
+  - Public path: `/home-assets/kvs-preview.svg`
 
 ## Database
 
 - DBMS: PostgreSQL
 - Database: `kvs_demo_backend`
-- The backend was migrated from SQL Server-style usage to PostgreSQL.
-- Do not reintroduce SQL Server assumptions, SQL Server connection strings, or SQL Server-specific syntax unless explicitly requested.
+- This project was migrated from SQL Server-style usage to PostgreSQL.
+- Do not reintroduce SQL Server connection strings, SQL Server assumptions, or SQL Server-specific syntax unless explicitly requested.
 
 ## Environment Files
 
@@ -46,66 +46,63 @@ KVS stands for Kanban Verification System. It is the demo continuation of the or
 - Frontend real env: `/opt/projects/kvs-demo-frontend/.env.local`
 - Safe examples only: `.env.example`
 - Never commit or display real env values, tokens, passwords, JWT secrets, DB passwords, or connection strings.
-- `env.zip` from the user contained backend and frontend env files. It is project-specific to KVS.
-- If an uploaded env contains old SQL Server `DATABASE_URL`, keep the PostgreSQL `DATABASE_URL` on the VPS unless the user explicitly wants a new DB target.
+- User-provided `env.zip` belonged to KVS and contained backend/frontend env files.
+- If env input contains old SQL Server `DATABASE_URL`, keep the working PostgreSQL `DATABASE_URL` unless the user explicitly changes DB target.
 
 ## Security Baseline
 
-Current hardening expectations:
+Expected current baseline:
 
 - Backend runs as non-root `kvsdemo`.
-- systemd hardening enabled: `NoNewPrivileges`, `ProtectSystem=strict`, `ProtectHome`, `PrivateTmp`.
-- CORS is restricted to `https://kvs-demo.karsa-dev.my.id`.
-- Bad CORS origins should return `403`.
-- `helmet` is enabled.
-- `x-powered-by` is disabled.
-- Auth routes are rate-limited.
-- General API routes are rate-limited.
-- JSON body limit is `1mb`.
-- Upload max size is `10MB`.
-- Upload static serving denies dotfiles and directory indexing.
-- Excel upload support is `.xlsx` only.
-- Do not use the vulnerable `xlsx` package; use `exceljs` helper utilities.
-- `npm audit --omit=dev --audit-level=moderate` should show `0 vulnerabilities` for backend and frontend.
+- systemd hardening: `NoNewPrivileges`, `ProtectSystem=strict`, `ProtectHome`, `PrivateTmp`.
+- CORS restricted to `https://kvs-demo.karsa-dev.my.id`.
+- Bad CORS origins return `403`.
+- `helmet` enabled.
+- `x-powered-by` disabled.
+- Auth routes rate-limited.
+- General API routes rate-limited.
+- JSON body limit: `1mb`.
+- Upload max size: `10MB`.
+- Static uploads deny dotfiles and directory indexing.
+- Excel upload support: `.xlsx` only.
+- Use `exceljs`; do not use vulnerable `xlsx` package.
+- `npm audit --omit=dev --audit-level=moderate` should return `0 vulnerabilities` for backend and frontend.
 
-## Important Functional Areas
+## Functional Areas
 
-- Authentication and user session
+- Authentication/session
 - Role/menu access
 - Master data: users, roles, menus, colors, customers, suppliers, lines, matrix, QR formats
 - Kanban import and management
-- OQC label/QR workflows
-- Double Check workflows
-- Barcode Delivery Scan workflows
-- Report/detail pages
-- Uploads and generated assets under backend-controlled paths
+- OQC labels/QR workflow
+- Double Check workflow
+- Barcode Delivery Scan workflow
+- Reports/detail pages
+- Upload/generated assets
 
 ## Verification Checklist
 
-Before reporting KVS work as done, verify:
+Before reporting KVS work as done:
 
-1. Backend service is active.
-2. Frontend service is active.
-3. Nginx is active and config is valid.
-4. Frontend login page returns HTTP 200.
-5. API root returns HTTP 200.
-6. Login works with the current seeded/admin credential available on the server or provided by the user.
-7. API smoke test passes core endpoints.
-8. `npm audit` passes for backend and frontend.
-9. No real `.env` files or secrets are staged/committed.
+1. Backend service active.
+2. Frontend service active.
+3. Nginx active and config valid.
+4. Frontend login page HTTP 200.
+5. API root HTTP 200.
+6. Login works with current server/user credential context.
+7. Core API smoke test passes. Known good count: `20/20`.
+8. Backend and frontend `npm audit` pass.
+9. No real `.env` files or secrets are staged/committed/printed.
 
-Known good smoke target count from prior verification: `20/20` endpoints.
+## Context Boundary
 
-## Context Boundaries
-
-When the user says switch to KVS context, focus only on:
+When the user says KVS context, focus only on:
 
 - `/opt/projects/kvs-demo-backend`
 - `/opt/projects/kvs-demo-frontend`
-- `kvs_demo_backend`
-- `kvs-demo.karsa-dev.my.id`
-- `kvs-demo-api.karsa-dev.my.id`
+- PostgreSQL database `kvs_demo_backend`
+- `https://kvs-demo.karsa-dev.my.id`
+- `https://kvs-demo-api.karsa-dev.my.id`
 
-Do not mix in Karsa Home content edits unless the user asks to expose/link KVS from the homepage.
-Do not mix in Portfolio content unless explicitly requested.
-Do not mix in Hermes Dashboard config unless explicitly requested.
+Do not modify Karsa Home except when the user asks to expose/link KVS from the homepage.
+Do not modify Portfolio or Hermes Dashboard unless explicitly requested.
