@@ -260,49 +260,9 @@ export const KanbanModel = {
             kbn_creaby: userFullname,
         };
 
-        await prisma.$executeRaw`
-            INSERT INTO mst_kanbans (
-                kbn_no,
-                clr_id,
-                kbn_uniq_no,
-                kbn_qty_box,
-                kbn_isSpecial,
-                kbn_sequence_check_desc,
-                kbn_logistic_guide_desc,
-                kbn_instruction_work_path,
-                kbn_sequence_check_path,
-                kbn_logistic_guide_path,
-                kbn_sequence_check_voice_path,
-                kbn_logistic_guide_voice_path,
-                kbn_stamp,
-                kbn_device_no,
-                kbn_cert_mark,
-                kbn_remark,
-                kbn_status,
-                kbn_creaby
-            ) VALUES (
-                ${row.kbn_no},
-                ${row.clr_id},
-                ${row.kbn_uniq_no},
-                ${row.kbn_qty_box},
-                ${row.kbn_isSpecial},
-                ${row.kbn_sequence_check_desc},
-                ${row.kbn_logistic_guide_desc},
-                ${row.kbn_instruction_work_path},
-                ${row.kbn_sequence_check_path},
-                ${row.kbn_logistic_guide_path},
-                ${row.kbn_sequence_check_voice_path},
-                ${row.kbn_logistic_guide_voice_path},
-                ${row.kbn_stamp},
-                ${row.kbn_device_no},
-                ${row.kbn_cert_mark},
-                ${row.kbn_remark},
-                ${row.kbn_status},
-                ${row.kbn_creaby}
-            )
-        `;
-
-        return row;
+        return prisma.mst_kanbans.create({
+            data: row,
+        });
     },
 
     update: (id, data, userFullname) => {
