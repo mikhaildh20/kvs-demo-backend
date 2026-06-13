@@ -68,6 +68,13 @@ Expected current baseline:
 - Use `exceljs`; do not use vulnerable `xlsx` package.
 - `npm audit --omit=dev --audit-level=moderate` should return `0 vulnerabilities` for backend and frontend.
 
+## Backend Data Access
+
+- Backend model files should use Prisma ORM/client methods (`findMany`, `findFirst`, `create`, `update`, `updateMany`, `count`, relations/includes/selects`).
+- Do not use raw SQL in model files: `$queryRaw`, `$queryRawUnsafe`, `$executeRaw`, or `$executeRawUnsafe`.
+- Keep `model-orm-refactor.test.js` as a guard so raw SQL does not get reintroduced into `models/*.model.js`.
+- If a query becomes too complex, prefer a Prisma relation/include/select helper or a service-level aggregation before falling back to raw SQL; raw SQL requires explicit user approval and context update.
+
 ## Functional Areas
 
 - Authentication/session

@@ -14,4 +14,5 @@ Rules:
 - Keep service compatible with non-root runtime user `kvsdemo`.
 - Keep CORS restricted to the KVS frontend domain unless the user explicitly expands it.
 - Keep Excel import `.xlsx` only and use `exceljs`, not the vulnerable `xlsx` package.
+- Keep model files on Prisma ORM/client methods; do not reintroduce `$queryRaw`/`$executeRaw` in `models/*.model.js` unless explicitly approved.
 - Verify with backend smoke test and `npm audit` before reporting success.
