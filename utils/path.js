@@ -1,12 +1,19 @@
 const PAGE_PATH_BY_API_PREFIX = [
-  { api: "/api/lines", page: "/pages/line" },
-  { api: "/api/menus", page: "/pages/menu" },
-  { api: "/api/matrix", page: "/pages/matrix" },
   { api: "/api/action-logs", page: "/pages/log" },
-  { api: "/api/double-check", page: "/pages/double-check" },
   { api: "/api/barcode-delivery-scans", page: "/pages/barcode-delivery-scan" },
-  { api: "/api/suppliers", page: "/pages/supplier" },
+  { api: "/api/colors", page: "/pages/color" },
+  { api: "/api/customers", page: "/pages/customer" },
+  { api: "/api/double-check", page: "/pages/double-check" },
+  { api: "/api/group-menus", page: "/pages/group-menu" },
+  { api: "/api/kanbans", page: "/pages/kanban" },
+  { api: "/api/lines", page: "/pages/line" },
+  { api: "/api/matrix", page: "/pages/matrix" },
+  { api: "/api/menus", page: "/pages/menu" },
+  { api: "/api/oqcs", page: "/pages/oqc" },
   { api: "/api/qr-formats", page: "/pages/qr-format" },
+  { api: "/api/roles", page: "/pages/role" },
+  { api: "/api/suppliers", page: "/pages/supplier" },
+  { api: "/api/users", page: "/pages/user" },
 ];
 
 const trimSlashes = (value) => value.replace(/\/+$/, "") || "/";
