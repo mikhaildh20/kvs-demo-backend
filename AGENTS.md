@@ -15,4 +15,7 @@ Rules:
 - Keep CORS restricted to the KVS frontend domain unless the user explicitly expands it.
 - Keep Excel import `.xlsx` only and use `exceljs`, not the vulnerable `xlsx` package.
 - Keep model files on Prisma ORM/client methods; do not reintroduce `$queryRaw`/`$executeRaw` in `models/*.model.js` unless explicitly approved.
+- Keep RBAC page-based: `mst_menus`/`detail_menu` store `/pages/...` paths only, never `/api/*` rows.
+- Keep API-to-page authorization mapping in the backend path resolver when adding protected endpoints.
+- Administrator should keep access to every active page menu, including newly created/reactivated menus.
 - Verify with backend smoke test and `npm audit` before reporting success.

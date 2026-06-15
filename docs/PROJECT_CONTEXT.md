@@ -87,6 +87,27 @@ Expected current baseline:
 - Reports/detail pages
 - Upload/generated assets
 
+## RBAC / Menu Rules
+
+- `mst_menus` and `detail_menu` store page paths only, for example `/pages/menu` or `/pages/group-menu/detail`.
+- Do not add `/api/*` rows to `mst_menus` or `detail_menu`.
+- Protected API endpoints must resolve to the matching page menu path in the backend path resolver, currently `utils/path.js`.
+- Dynamic frontend paths such as `/pages/group-menu/detail/{encryptedId}` normalize to the static menu path `/pages/group-menu/detail` before access checks.
+- Administrator should have every active page menu in `detail_menu`.
+- New or reactivated menu rows should auto-grant Administrator access so the admin role does not get locked out after menu maintenance.
+- Auth/profile pages are not normal menu RBAC entries.
+
+## Data Import Rules
+
+- SQL Server dump imports should parse tuples only after the `VALUES` keyword.
+- Preserve meaningful fixed-width/char whitespace, especially for matrix data.
+- Imported menu data must still follow the page-path-only RBAC rule above.
+
+## Brand / Naming Boundary
+
+- KVS frontend branding uses NLA / Nusantara Lighting Automotive text and `/images/logoNLA.png`.
+- Portfolio work-history naming is separate; do not change portfolio company names when the user asks for KVS branding text.
+
 ## Verification Checklist
 
 Before reporting KVS work as done:
