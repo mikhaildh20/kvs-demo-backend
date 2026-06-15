@@ -34,6 +34,42 @@ const resolveSort = (sortValue = "mnu_name ASC") => {
   return { [column]: direction };
 };
 
+const ensureAdministratorMenuAccess = async (tx, menuId, userFullname) => {
+  const adminRole = await tx.mst_roles.findFirst({
+    where: {
+      rol_name: "Administrator",
+      rol_status: 1,
+    },
+    select: {
+      rol_id: true,
+    },
+  });
+
+  if (!adminRole) {
+    return;
+  }
+
+  await tx.detail_menu.upsert({
+    where: {
+      mnu_id_rol_id: {
+        mnu_id: Number(menuId),
+        rol_id: adminRole.rol_id,
+      },
+    },
+    create: {
+      mnu_id: Number(menuId),
+      rol_id: adminRole.rol_id,
+      dtm_status: 1,
+      dtm_creaby: userFullname,
+    },
+    update: {
+      dtm_status: 1,
+      dtm_modidate: new Date(),
+      dtm_modiby: userFullname,
+    },
+  });
+};
+
 export const MenuModel = {
   async findPaged(query) {
     const pageNumber = Math.max(Number(query.PageNumber || 1), 1);
@@ -59,14 +95,20 @@ export const MenuModel = {
     }),
 
   create: (data, userFullname) =>
-    prisma.mst_menus.create({
-      data: {
-        mnu_name: data.name,
-        mnu_path: data.path,
-        mnu_icon: data.icon,
-        mnu_status: 1,
-        mnu_creaby: userFullname,
-      },
+    prisma.$transaction(async (tx) => {
+      const menu = await tx.mst_menus.create({
+        data: {
+          mnu_name: data.name,
+          mnu_path: data.path,
+          mnu_icon: data.icon,
+          mnu_status: 1,
+          mnu_creaby: userFullname,
+        },
+      });
+
+      await ensureAdministratorMenuAccess(tx, menu.mnu_id, userFullname);
+
+      return menu;
     }),
 
   update: (id, data, userFullname) => {
@@ -97,13 +139,21 @@ export const MenuModel = {
       throw new Error("Menu not found");
     }
 
-    return prisma.mst_menus.update({
-      where: { mnu_id: Number(id) },
-      data: {
-        mnu_status: menu.mnu_status === 1 ? 0 : 1,
-        mnu_modidate: new Date(),
-        mnu_modiby: userFullname,
-      },
+    return prisma.$transaction(async (tx) => {
+      const updatedMenu = await tx.mst_menus.update({
+        where: { mnu_id: Number(id) },
+        data: {
+          mnu_status: menu.mnu_status === 1 ? 0 : 1,
+          mnu_modidate: new Date(),
+          mnu_modiby: userFullname,
+        },
+      });
+
+      if (updatedMenu.mnu_status === 1) {
+        await ensureAdministratorMenuAccess(tx, updatedMenu.mnu_id, userFullname);
+      }
+
+      return updatedMenu;
     });
   },
 };
