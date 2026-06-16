@@ -64,13 +64,6 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads"), {
     },
 }));
 
-const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    limit: 30,
-    standardHeaders: "draft-8",
-    legacyHeaders: false,
-});
-
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     limit: 1200,
@@ -82,7 +75,7 @@ app.get("/", (req, res) => {
     res.send("Connected to Warehouse API");
 });
 
-app.use("/api/auth", authLimiter, authRoutes);
+app.use("/api/auth", authRoutes);
 app.use("/api", apiLimiter, authenticate, authorizeMenu);
 app.use("/api/uploads", uploadRoutes);
 app.use("/api/voice", voiceRoutes);
