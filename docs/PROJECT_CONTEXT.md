@@ -97,11 +97,24 @@ Expected current baseline:
 - New or reactivated menu rows should auto-grant Administrator access so the admin role does not get locked out after menu maintenance.
 - Auth/profile pages are not normal menu RBAC entries.
 
+## Current Stable Workflow Notes
+
+- Frontend visible copy and Toast messages should be English and user-facing; avoid leaking raw backend, Prisma, stack trace, or Indonesian technical messages into UI Toasts.
+- Normal success Toasts should be frontend-controlled. Backend `response.message` can exist, but the UI should not depend on it for common successful actions.
+- Import features should distinguish between inserted, updated, unchanged/no-change, and invalid Excel cases so duplicate imports do not look like system failures.
+- Kanban import is idempotent for repeated identical Excel files and returns `noChanges: true` when nothing new is inserted/updated.
+- Barcode Delivery Scan import is idempotent for repeated identical Excel files and returns inserted/updated/unchanged counts plus `noChanges: true` when nothing changed.
+- Excel date-only values must stay date-only. For Barcode Delivery Scan `Ship Date`, preserve the Excel calendar date and store/query it as UTC-safe midnight so `10-01-2025` does not become `09-01-2025`.
+- Document/PDF viewers should load uploaded files from the app origin (`https://kvs-demo.karsa-dev.my.id/uploads/...`) through the Nginx `/uploads/` proxy to avoid cross-origin iframe blocking from API-domain security headers.
+- Kanban voice/TTS descriptions support long narrative text through backend chunking; frontend description fields are textarea fields with a 2000-character limit.
+
 ## Data Import Rules
 
 - SQL Server dump imports should parse tuples only after the `VALUES` keyword.
 - Preserve meaningful fixed-width/char whitespace, especially for matrix data.
 - Imported menu data must still follow the page-path-only RBAC rule above.
+- Kanban Excel import required columns are validated explicitly and should return English messages naming the missing columns.
+- Barcode Delivery Scan Excel import required columns are: `Ship Date`, `Ship No`, `S/O No`, `P/O No`, `Draw No`, `CUS Cd`, `Qty Per Box`, `Box Qty`.
 
 ## Brand / Naming Boundary
 

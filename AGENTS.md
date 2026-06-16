@@ -14,6 +14,8 @@ Rules:
 - Keep service compatible with non-root runtime user `kvsdemo`.
 - Keep CORS restricted to the KVS frontend domain unless the user explicitly expands it.
 - Keep Excel import `.xlsx` only and use `exceljs`, not the vulnerable `xlsx` package.
+- Keep import responses/errors clean and English; repeated identical imports should return no-change metadata instead of raw unique-constraint failures.
+- Keep Excel date-only values date-only; Barcode Delivery Scan `Ship Date` must preserve the Excel calendar date without timezone shifts.
 - Keep model files on Prisma ORM/client methods; do not reintroduce `$queryRaw`/`$executeRaw` in `models/*.model.js` unless explicitly approved.
 - Keep RBAC page-based: `mst_menus`/`detail_menu` store `/pages/...` paths only, never `/api/*` rows.
 - Keep API-to-page authorization mapping in the backend path resolver when adding protected endpoints.
