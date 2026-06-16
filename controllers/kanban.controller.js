@@ -2,6 +2,44 @@ import { KanbanService } from "../services/kanban.service.js";
 import { error, success } from "../response/DtoResponse.js";
 import { KanbanModel } from "../models/kanban.model.js";
 
+const getKanbanImportErrorMessage = (err) => {
+    const message = String(err?.message || "");
+    const lower = message.toLowerCase();
+
+    if (lower.includes("missing required column")) {
+        return message;
+    }
+
+    if (lower.includes("excel a") && lower.includes("excel b") && lower.includes("required")) {
+        return "Excel A and Excel B are required";
+    }
+
+    if (lower.includes("no matching data")) {
+        return "No matching data was found between Excel A and Excel B. Check the item codes in both files.";
+    }
+
+    if (
+        lower.includes("invalid file") ||
+        lower.includes("zip") ||
+        lower.includes("worksheet") ||
+        lower.includes("end of central directory")
+    ) {
+        return "The Excel file could not be read. Make sure you upload a valid .xlsx template.";
+    }
+
+    if (
+        lower.includes("prisma") ||
+        lower.includes("constraint") ||
+        lower.includes("stack") ||
+        lower.includes("trace") ||
+        message.length > 140
+    ) {
+        return "Failed to import kanban data. Check the Excel content and try again.";
+    }
+
+    return message || "Failed to import kanban data. Check the Excel files and try again.";
+};
+
 export const KanbanController = {
     async importKanban(req, res){
         try{
@@ -9,7 +47,7 @@ export const KanbanController = {
             const data = await KanbanService.processKanbanImport(fileA?.[0], fileB?.[0]);
             return res.json(success(data, "Kanban data imported successfully"));
         }catch(err){
-            return res.status(400).json(error(err.message));
+            return res.status(400).json(error(getKanbanImportErrorMessage(err)));
         }
     },
 

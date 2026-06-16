@@ -9,19 +9,17 @@ import { findCustomersByCodes, bulkInsertCustomer } from '../models/customer.mod
 import { decryptIdUrl } from '../utils/encryptor.js';
 
 const REQUIRED_FILE_A_COLUMNS = [
-    "I_ENTRY_DATE",
     "I_UPD_DATE",
-    "I_CTRL_SECTION",
-    "I_FAC_CD",
-    "I_COM_CODE",
+    "I_ITEM_CD",
+    "I_DL_CD",
+    "I_DL_ARG_DESC",
+    "I_TRADE_ITEM_CD",
+    "I_TRADE_ITEM_DESC",
 ];
 
 const REQUIRED_FILE_B_COLUMNS = [
-    "I_HOLD_QTY",
-    "I_HOLD_QTY_UNIT",
-    "I_HOLD_QTY_UNIT_NAME",
-    "I_FRST_FIX_PLAN_SPLIT_PERIOD",
-    "I_TEMPLATE_CLS",
+    "I_ITEM_CD",
+    "I_DRW_NO",
 ];
 
 const resolveId = (value) => {
@@ -40,10 +38,10 @@ const normalizeColumn = (value) =>
         .trim()
         .toUpperCase();
 
-const validateColumns = (headers, requiredColumns) => {
+const getMissingColumns = (headers, requiredColumns) => {
     const columns = new Set(headers);
 
-    return requiredColumns.every((column) => columns.has(column));
+    return requiredColumns.filter((column) => !columns.has(column));
 };
 
 const getCell = (row, column) => {
@@ -59,6 +57,17 @@ const normalizeRowKeys = (rows) =>
         }
         return normalized;
     });
+
+const validateImportColumns = (rows, requiredColumns, fileLabel) => {
+    const headers = Object.keys(rows?.[0] || {}).map(normalizeColumn);
+    const missingColumns = getMissingColumns(headers, requiredColumns);
+
+    if (missingColumns.length > 0) {
+        throw new Error(
+            `${fileLabel} is missing required column(s): ${missingColumns.join(", ")}.`
+        );
+    }
+};
 
 const normalizeKanbanNo = (value) => {
     const raw = String(value || "0000").trim();
@@ -154,6 +163,9 @@ export const KanbanService = {
 
         const sheetA = normalizeRowKeys(sheetARaw);
         const sheetB = normalizeRowKeys(sheetBRaw);
+
+        validateImportColumns(sheetA, REQUIRED_FILE_A_COLUMNS, "Excel A");
+        validateImportColumns(sheetB, REQUIRED_FILE_B_COLUMNS, "Excel B");
 
         // 🔥 MAP ITEM MASTER
         const mapB = new Map();
@@ -308,7 +320,7 @@ export const KanbanService = {
 
         if (detailData.length === 0) {
             throw new Error(
-                "Tidak ada data yang match antara Excel A dan B"
+                "No matching data was found between Excel A and Excel B"
             );
         }
 
