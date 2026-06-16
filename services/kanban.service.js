@@ -114,6 +114,12 @@ const normalizeKey = (val) =>
         .trim()
         .toUpperCase();
 
+const assertMaxLength = (value, maxLength, label) => {
+    if (String(value || "").length > maxLength) {
+        throw new Error(`${label} must be ${maxLength} characters or fewer.`);
+    }
+};
+
 const mapKanban = (kanban) => ({
     Id: kanban.kbn_no,
     CustomerId: kanban.cst_id,
@@ -201,6 +207,9 @@ export const KanbanService = {
             .trim()
             .toUpperCase();
 
+            assertMaxLength(customerCode, 4, "Customer code");
+            assertMaxLength(customerName, 55, "Customer name");
+
             if (customerCode) {
                 customerMap.set(customerCode, {
                     cst_code: customerCode,
@@ -251,6 +260,10 @@ export const KanbanService = {
             )
             .trim()
             .toUpperCase();
+
+            assertMaxLength(itemCode, 50, "Item code");
+            assertMaxLength(partNumber, 55, "Part number");
+            assertMaxLength(partDesc, 55, "Part description");
 
             // 🔥 DETAIL
             detailMap.set(detailKey, {
@@ -325,20 +338,31 @@ export const KanbanService = {
         }
 
         // 🔥 INSERT MASTER
-        await bulkInsertKanban(
+        const kanbanResult = await bulkInsertKanban(
             kanbanData
         );
 
         // 🔥 INSERT DETAIL
-        await bulkInsertDetail(
+        const detailResult = await bulkInsertDetail(
             detailData
         );
+
+        const changedRows =
+            Number(kanbanResult?.created || 0) +
+            Number(detailResult?.created || 0) +
+            Number(detailResult?.updated || 0);
 
         return {
             total: detailData.length,
             kanban: kanbanData.length,
             customer: customerData.length,
-            inserted: detailData.length,
+            inserted: Number(detailResult?.created || 0),
+            updated: Number(detailResult?.updated || 0),
+            unchanged: Number(detailResult?.unchanged || 0),
+            createdKanban: Number(kanbanResult?.created || 0),
+            skippedKanban: Number(kanbanResult?.skipped || 0),
+            changed: changedRows,
+            noChanges: changedRows === 0,
         };
     },
 

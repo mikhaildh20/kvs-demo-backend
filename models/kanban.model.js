@@ -26,7 +26,7 @@ const toDetailKey = (row) => {
 };
 
 export const bulkInsertKanban = async (data) => {
-    if (!data.length) return;
+    if (!data.length) return { created: 0, skipped: 0 };
 
     const deduped = Array.from(
         new Map(
@@ -49,11 +49,19 @@ export const bulkInsertKanban = async (data) => {
     const existingNos = new Set(existing.map((row) => row.kbn_no));
     const toCreate = deduped.filter((row) => !existingNos.has(row.kbn_no));
 
+    let createdCount = 0;
     for (const batch of chunk(toCreate, 1000)) {
-        await prisma.mst_kanbans.createMany({
+        const result = await prisma.mst_kanbans.createMany({
             data: batch,
+            skipDuplicates: true,
         });
+        createdCount += result.count;
     }
+
+    return {
+        created: createdCount,
+        skipped: deduped.length - createdCount,
+    };
 };
 
 const dedupeDetail = (data) => {
@@ -82,37 +90,37 @@ const dedupeDetail = (data) => {
 };
 
 export const bulkInsertDetail = async (data) => {
-    if (!data.length) return;
+    if (!data.length) return { created: 0, updated: 0, unchanged: 0 };
 
     const deduped = dedupeDetail(data);
-    if (!deduped.length) return;
+    if (!deduped.length) return { created: 0, updated: 0, unchanged: 0 };
 
     const uniqueCodes = [...new Set(deduped.map((row) => row.pnu_code))];
     const uniqueKanbans = [...new Set(deduped.map((row) => row.kbn_no))];
-    const uniqueDates = [
-        ...new Set(
-            deduped
-                .map((row) => normalizeDate(row.pnu_latest_date)?.getTime())
-                .filter(Boolean)
-        ),
-    ].map((ms) => new Date(ms));
 
     const existingRows = await prisma.detail_kanban_part_number.findMany({
         where: {
             pnu_code: { in: uniqueCodes },
             kbn_no: { in: uniqueKanbans },
-            pnu_latest_date: { in: uniqueDates },
         },
         select: {
             pnu_code: true,
             kbn_no: true,
             pnu_latest_date: true,
+            pnu_part_number: true,
+            pnu_part_desc: true,
         },
     });
 
     const existingKeys = new Set(existingRows.map((row) => toDetailKey(row)).filter(Boolean));
+    const existingByKey = new Map(
+        existingRows
+            .map((row) => [toDetailKey(row), row])
+            .filter(([key]) => Boolean(key))
+    );
     const toCreate = [];
     const toUpdate = [];
+    const unchanged = [];
 
     for (const row of deduped) {
         const normalizedRow = {
@@ -123,16 +131,28 @@ export const bulkInsertDetail = async (data) => {
         if (!key) continue;
 
         if (existingKeys.has(key)) {
-            toUpdate.push(normalizedRow);
+            const existingRow = existingByKey.get(key);
+            const isChanged =
+                String(existingRow?.pnu_part_number || "") !== String(normalizedRow.pnu_part_number || "") ||
+                String(existingRow?.pnu_part_desc || "") !== String(normalizedRow.pnu_part_desc || "");
+
+            if (isChanged) {
+                toUpdate.push(normalizedRow);
+            } else {
+                unchanged.push(normalizedRow);
+            }
         } else {
             toCreate.push(normalizedRow);
         }
     }
 
+    let createdCount = 0;
     for (const batch of chunk(toCreate, 1000)) {
-        await prisma.detail_kanban_part_number.createMany({
+        const result = await prisma.detail_kanban_part_number.createMany({
             data: batch,
+            skipDuplicates: true,
         });
+        createdCount += result.count;
     }
 
     const now = new Date();
@@ -155,6 +175,12 @@ export const bulkInsertDetail = async (data) => {
             )
         );
     }
+
+    return {
+        created: createdCount,
+        updated: toUpdate.length,
+        unchanged: unchanged.length + (toCreate.length - createdCount),
+    };
 };
 
 const buildWhere = ({ Keyword, Status, Special }) => {
