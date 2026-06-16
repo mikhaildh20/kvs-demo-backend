@@ -218,7 +218,7 @@ model mst_qr_formats {
 
 model mst_suppliers {
   spl_id        Int             @id(map: "PK__mst_supp__7CE09DFDC85066A1") @default(autoincrement())
-  spl_code      String?         @unique(map: "uq_spl_code", where: raw("spl_code IS NOT NULL")) @db.VarChar(3)
+  spl_code      String?         @unique(map: "uq_spl_code", where: raw("spl_code IS NOT NULL")) @db.VarChar(30)
   spl_status    Int?
   spl_creadate  DateTime?       @default(now()) @db.Timestamp(3)
   spl_modidate  DateTime?       @db.Timestamp(3)
