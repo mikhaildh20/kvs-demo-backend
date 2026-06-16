@@ -6,12 +6,12 @@ const safeDate = (value) => (/^\d{4}-\d{2}-\d{2}$/.test(String(value || "")) ? S
 const toDate = (value) => {
   const dateValue = safeDate(value);
   if (!dateValue) return null;
-  return new Date(`${dateValue}T00:00:00`);
+  return new Date(`${dateValue}T00:00:00.000Z`);
 };
 const dateKey = (value) => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
-  return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-");
+  return [date.getUTCFullYear(), String(date.getUTCMonth() + 1).padStart(2, "0"), String(date.getUTCDate()).padStart(2, "0")].join("-");
 };
 const toNumber = (value) => Number(value || 0);
 const scannedCount = (row) => row.txn_barcode_delivery_scan_detail?.length || 0;
@@ -155,21 +155,54 @@ export const BarcodeDeliveryScanModel = {
     tableReady = true;
   },
 
-  insertImportRow: (row, userFullname) =>
-    prisma.txn_barcode_delivery_scan.create({
+  async insertImportRow(row, userFullname) {
+    const key = deliveryKeyWhere(row);
+    const data = {
+      bds_ship_date: toDate(row.shipDate),
+      bds_ship_no: row.shipNo,
+      bds_so_no: row.soNo,
+      bds_po_no: row.poNo,
+      kbn_no: row.kanbanNo,
+      cst_code: row.customerCode,
+      bds_qty_perbox: Number(row.qtyPerBox || 0),
+      bds_box_qty: Number(row.boxQty || 0),
+    };
+
+    const existing = await prisma.txn_barcode_delivery_scan.findFirst({
+      where: key,
+      select: {
+        cst_code: true,
+        bds_qty_perbox: true,
+        bds_box_qty: true,
+      },
+    });
+
+    if (existing) {
+      const changed =
+        String(existing.cst_code || "") !== String(data.cst_code || "") ||
+        Number(existing.bds_qty_perbox || 0) !== Number(data.bds_qty_perbox || 0) ||
+        Number(existing.bds_box_qty || 0) !== Number(data.bds_box_qty || 0);
+
+      if (!changed) {
+        return "unchanged";
+      }
+
+      await prisma.txn_barcode_delivery_scan.updateMany({
+        where: key,
+        data,
+      });
+      return "updated";
+    }
+
+    await prisma.txn_barcode_delivery_scan.create({
       data: {
-        bds_ship_date: toDate(row.shipDate),
-        bds_ship_no: row.shipNo,
-        bds_so_no: row.soNo,
-        bds_po_no: row.poNo,
-        kbn_no: row.kanbanNo,
-        cst_code: row.customerCode,
-        bds_qty_perbox: Number(row.qtyPerBox || 0),
-        bds_box_qty: Number(row.boxQty || 0),
+        ...data,
         bds_status: 0,
         bds_creaby: userFullname,
       },
-    }),
+    });
+    return "created";
+  },
 
   async findPaged(query = {}) {
     const pageNumber = Math.max(Number(query.PageNumber || 1), 1);

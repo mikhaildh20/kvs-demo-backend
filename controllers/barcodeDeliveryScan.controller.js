@@ -3,6 +3,33 @@ import { error, success } from "../response/DtoResponse.js";
 
 const statusOf = (err, fallback = 400) => err.statusCode || fallback;
 
+const getImportErrorMessage = (err) => {
+  const message = String(err?.message || "");
+  const lower = message.toLowerCase();
+
+  if (!message) return "Failed to import barcode delivery scan data. Check the Excel file and try again.";
+  if (lower.includes("excel file is required")) return "Choose an Excel file first.";
+  if (lower.includes("missing columns")) return message;
+  if (lower.includes("unsupported file type")) return "Only Excel .xlsx files are allowed for barcode delivery scan import.";
+  if (lower.includes("file") && (lower.includes("size") || lower.includes("limit") || lower.includes("maximum"))) {
+    return "The Excel file is too large. Maximum file size is 25 MB.";
+  }
+  if (lower.includes("invalid file") || lower.includes("worksheet") || lower.includes("zip") || lower.includes("end of central directory")) {
+    return "The Excel file could not be read. Make sure you upload a valid .xlsx template.";
+  }
+  if (
+    lower.includes("prisma") ||
+    lower.includes("constraint") ||
+    lower.includes("stack") ||
+    lower.includes("trace") ||
+    message.length > 140
+  ) {
+    return "Failed to import barcode delivery scan data. Check the Excel content and try again.";
+  }
+
+  return message;
+};
+
 export const BarcodeDeliveryScanController = {
   async getAll(req, res) {
     try {
@@ -18,7 +45,7 @@ export const BarcodeDeliveryScanController = {
       const data = await BarcodeDeliveryScanService.importExcel(req.file, req.user);
       return res.json(success(data, "Barcode delivery scan imported successfully"));
     } catch (err) {
-      return res.status(statusOf(err)).json(error(err.message));
+      return res.status(statusOf(err)).json(error(getImportErrorMessage(err)));
     }
   },
 

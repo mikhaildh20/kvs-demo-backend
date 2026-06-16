@@ -16,7 +16,7 @@ router.post("/import", (req, res, next) => {
       return res.status(400).json({
         data: null,
         error: true,
-        message: err.code === "LIMIT_FILE_SIZE" ? "Import file maximum is 25MB" : err.message,
+        message: err.code === "LIMIT_FILE_SIZE" ? "The Excel file is too large. Maximum file size is 25 MB." : err.message,
       });
     }
 

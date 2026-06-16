@@ -37,6 +37,19 @@ const parseExcelDate = (value) => {
 };
 
 const toSqlDate = (value) => {
+  if (!value) return null;
+
+  if (typeof value === "number") {
+    const date = excelSerialDateToDate(value);
+    if (!date) return null;
+
+    return [
+      date.getUTCFullYear(),
+      String(date.getUTCMonth() + 1).padStart(2, "0"),
+      String(date.getUTCDate()).padStart(2, "0"),
+    ].join("-");
+  }
+
   const date = parseExcelDate(value);
   if (!date) return null;
 
@@ -52,9 +65,9 @@ const dateKey = (value) => {
   if (Number.isNaN(date.getTime())) return "";
 
   return [
-    date.getFullYear(),
-    String(date.getMonth() + 1).padStart(2, "0"),
-    String(date.getDate()).padStart(2, "0"),
+    date.getUTCFullYear(),
+    String(date.getUTCMonth() + 1).padStart(2, "0"),
+    String(date.getUTCDate()).padStart(2, "0"),
   ].join("-");
 };
 
@@ -252,6 +265,9 @@ export const BarcodeDeliveryScanService = {
     assertRequiredColumns(rows);
 
     let imported = 0;
+    let inserted = 0;
+    let updated = 0;
+    let unchanged = 0;
     for (const row of rows) {
       const shipDate = toSqlDate(getCell(row, "Ship Date"));
       const poNo = String(getCell(row, "P/O No") || "").trim();
@@ -259,7 +275,7 @@ export const BarcodeDeliveryScanService = {
 
       if (!shipDate || !poNo || !kanbanNo) continue;
 
-      await BarcodeDeliveryScanModel.insertImportRow(
+      const result = await BarcodeDeliveryScanModel.insertImportRow(
         {
           shipDate,
           shipNo: String(getCell(row, "Ship No") || "").trim(),
@@ -272,10 +288,21 @@ export const BarcodeDeliveryScanService = {
         },
         "PRONES"
       );
+
+      if (result === "created") inserted += 1;
+      if (result === "updated") updated += 1;
+      if (result === "unchanged") unchanged += 1;
       imported += 1;
     }
 
-    return { imported };
+    return {
+      imported,
+      inserted,
+      updated,
+      unchanged,
+      changed: inserted + updated,
+      noChanges: imported > 0 && inserted + updated === 0,
+    };
   },
 
   async getAll(query) {
